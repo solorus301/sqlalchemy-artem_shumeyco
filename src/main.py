@@ -1,6 +1,9 @@
+import asyncio
 import os
 import sys
-from queries.core import create_tables, insert_data
+from queries.orm import create_tables, insert_data, async_insert_data
 
 create_tables()
 insert_data()
+
+# asyncio.run(async_insert_data())
