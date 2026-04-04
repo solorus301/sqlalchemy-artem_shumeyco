@@ -1,8 +1,7 @@
-from queries.core import SyncCore
 from queries.orm import SyncORM
 
-
 SyncORM.create_tables()
+# SyncCore.create_tables()
 
 SyncORM.insert_workers()
 
@@ -11,3 +10,5 @@ SyncORM.insert_workers()
 
 SyncORM.select_workers()
 SyncORM.update_worker()
+SyncORM.insert_resumes()
+SyncORM.select_resumes_avg_salary()

@@ -32,6 +32,7 @@ class SyncCore:
             )
             conn.execute(stmt)
             conn.commit()
+            
     @staticmethod
     def select_workers():
         with sync_engine.connect() as conn:
@@ -39,6 +40,7 @@ class SyncCore:
             result = conn.execute(query)
             workers = result.all()
             print(f"{workers=}")
+
     @staticmethod
     def update_worker(worker_id: int=2, new_username: str = "solorus"):
         with sync_engine.connect() as conn:

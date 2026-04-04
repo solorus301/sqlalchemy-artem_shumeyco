@@ -1,6 +1,6 @@
-from sqlalchemy import select
+from sqlalchemy import select, func, cast, Integer, and_
 from database import sync_engine, session_factory, Base
-from models import WorkersOrm
+from models import WorkersOrm, ResumesOrm, Workload
 
 class SyncORM:
     @staticmethod
@@ -38,10 +38,58 @@ class SyncORM:
             session.refresh(worker_solorus)
             session.commit()
 
-    # @staticmethod
-    # async def async_insert_data():
-    #     async with async_session_factory() as session:
-    #         worker_bobr = WorkersOrm(username="Bobr")
-    #         worker_volk = WorkersOrm(username="Volk")
-    #         session.add_all([worker_bobr, worker_volk])
-    #         await session.commit()
+    @staticmethod
+    def insert_resumes():
+        with session_factory() as session:
+            resume_jack_1 = ResumesOrm(
+                title="Python Junior Developer",
+                salary=50000,
+                workload=Workload.fulltime, worker_id=1
+            )
+            resume_jack_2 = ResumesOrm(
+                title="Python Разработчик",
+                salary=150000,
+                workload=Workload.fulltime, worker_id=1
+            )
+            resume_michael_1 = ResumesOrm(
+                title="Python Data Engineer",
+                salary=250000,
+                workload=Workload.parttime, worker_id=2
+            )
+            resume_michael_2 = ResumesOrm(
+                title="Data Scientist",
+                salary=300000,
+                workload=Workload.fulltime, worker_id=2
+            )
+            session.add_all([resume_jack_1, resume_jack_2, resume_michael_1, resume_michael_2])
+            session.commit()
+
+# select workload, avg(salary) as avg_salary
+# from resumes
+# where title like '%Python%' and salary > 40000
+# group by workload
+
+    @staticmethod
+    def select_resumes_avg_salary(like_language: str = "Python"):
+        with session_factory() as session:
+            query = (
+                select(
+                    ResumesOrm.workload,
+                    cast(func.avg(ResumesOrm.salary), Integer).label("avg_salary"),
+                )
+                .select_from(ResumesOrm)
+                .filter(and_(
+                    ResumesOrm.title.contains(like_language),
+                    ResumesOrm.salary > 40000,
+                ))
+                .group_by(ResumesOrm.workload)
+                .having(cast(func.avg(ResumesOrm.salary), Integer) > 70000)
+            )
+            print(query.compile(compile_kwargs={"literal_binds": True}))
+            res = session.execute(query)
+            result = res.all()
+            print(result)
+
+
+
+            
