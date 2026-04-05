@@ -1,4 +1,5 @@
-from sqlalchemy import select, func, cast, Integer, and_
+from sqlalchemy import insert, select, func, cast, Integer, and_
+from sqlalchemy.orm import aliased
 from database import sync_engine, session_factory, Base
 from models import WorkersOrm, ResumesOrm, Workload
 
@@ -90,6 +91,78 @@ class SyncORM:
             result = res.all()
             print(result)
 
+    @staticmethod
+    def insert_additional_resumes():
+        with session_factory() as session:
+            workers = [
+                {"username": "vital"},  # id 3
+                {"username": "clavik"},  # id 4
+                {"username": "artur"},
+            ]
+            resumes = [
+                {"title": "Python программист(долбаеб)", "salary": 60000, "workload": "fulltime", "worker_id": 3},
+                {"title": "Machine Learning Engineer", "salary": 70000, "workload": "parttime", "worker_id": 3},
+                {"title": "Python Data Scientist", "salary": 80000, "workload": "parttime", "worker_id": 4},
+                {"title": "Python Analyst", "salary": 90000, "workload": "fulltime", "worker_id": 4},
+                {"title": "Python Junior Developer", "salary": 100000, "workload": "fulltime", "worker_id": 5},
+            ]
+            insert_workers = insert(WorkersOrm).values(workers)
+            insert_resumes = insert(ResumesOrm).values(resumes)
+            session.execute(insert_workers)
+            session.execute(insert_resumes)
+            session.commit()
 
-
+    @staticmethod
+    def join_cte_subquery_window_func(like_language: str = "Python"):
+        '''        
+                WITH helper2 as (
+            SELECT *, salary-avg_workload_salary as salary_diff
+            FROM
+            (SELECT
+                w.id,
+                w.username,
+                r.salary,
+                r.workload,
+                avg(r.salary) OVER (PARTITION BY workload)::int AS avg_workload_salary
+            FROM resumes r
+            JOIN workers w ON r.worker_id = w.id) helper1
+        )
+        SELECT * FROM helper2
+        ORDER BY salary_diff DESC
+        '''
+        with session_factory() as session:
+            r = aliased(ResumesOrm)
+            w = aliased(WorkersOrm)
+            subq = (
+                select(
+                    w.id,
+                    w.username,
+                    r.salary,
+                    r.workload,
+                    func.avg(r.salary).over(partition_by=r.workload).cast(Integer).label("avg_workload_salary"),
+                )
+                # .select_from(r)
+                .join(r, r.worker_id == w.id)
+                .subquery("helper1")
+            )
             
+            cte = (
+                select(
+                    subq.c.id,
+                    subq.c.username,
+                    subq.c.salary,
+                    subq.c.workload,
+                    subq.c.avg_workload_salary,
+                    (subq.c.salary - subq.c.avg_workload_salary).label("salary_diff"),
+                )
+                .cte("helper2")
+            )
+            query = (
+                select(cte)
+                .order_by(cte.c.salary_diff.desc())
+            )
+
+            res = session.execute(query)
+            result = res.all()
+            print(f"{result=}")
+            # print(query.compile(compile_kwargs={"literal_binds": True}))
