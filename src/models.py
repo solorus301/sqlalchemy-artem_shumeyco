@@ -1,7 +1,7 @@
 import datetime
 from typing import Optional, Annotated
 from sqlalchemy import TIMESTAMP, Enum, Table, Column, Integer, String, MetaData, ForeignKey, func, text
-from sqlalchemy.orm import Mapped, mapped_column
+from sqlalchemy.orm import Mapped, mapped_column, relationship
 from database import Base, str_256
 import enum
 
@@ -19,11 +19,12 @@ class WorkersOrm(Base):
     id: Mapped[intpk]
     username: Mapped[str]
 
+    resumes: Mapped[list["ResumesOrm"]] = relationship()
+
 
 class Workload(enum.Enum):
     parttime = "parttime"
     fulltime = "fulltime"
-
 
 class ResumesOrm(Base):
     __tablename__ = "resumes"
@@ -35,6 +36,11 @@ class ResumesOrm(Base):
     worker_id: Mapped[int] = mapped_column(ForeignKey("workers.id", ondelete="CASCADE"))
     created_at: Mapped[created_at]
     updated_at: Mapped[updated_at]
+
+    worker: Mapped["WorkersOrm"] = relationship()
+
+    repr_cols_num = 3
+    repr_cols = ("created_at", )
 
 
 

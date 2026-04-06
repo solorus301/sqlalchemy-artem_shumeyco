@@ -28,3 +28,9 @@ class Base(DeclarativeBase):
         str_256: String(256)
     }
 
+    def __repr__(self):
+        cols = []
+        for col in self.__table__.columns.keys():
+            cols.append(f"{col}={getattr(self,col)}")
+        return f"<{self.__class__.__name__} {','.join(cols)}>"
+
