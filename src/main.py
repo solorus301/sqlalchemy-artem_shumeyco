@@ -36,7 +36,7 @@ async def main():
         SyncORM.select_workers_with_lazy_relationship()
         SyncORM.select_workers_with_joined_relationship()
         SyncORM.select_workers_with_selectin_relationship()
-        # SyncORM.select_workers_with_condition_relationship()
+        SyncORM.select_workers_with_condition_relationship()
         # SyncORM.select_workers_with_condition_relationship_contains_eager()
         # SyncORM.select_workers_with_relationship_contains_eager_with_limit()
         # SyncORM.convert_workers_to_dto()

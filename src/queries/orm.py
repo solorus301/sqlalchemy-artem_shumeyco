@@ -1,5 +1,5 @@
 from sqlalchemy import insert, select, func, cast, Integer, and_
-from sqlalchemy.orm import aliased, joinedload, selectinload
+from sqlalchemy.orm import aliased, joinedload, selectinload, contains_eager
 from database import sync_engine, session_factory, Base
 from models import WorkersOrm, ResumesOrm, Workload
 
@@ -7,7 +7,7 @@ class SyncORM:
     @staticmethod
     def create_tables():
         Base.metadata.drop_all(sync_engine)
-        sync_engine.echo=True
+        sync_engine.echo=False
         Base.metadata.create_all(sync_engine)
         sync_engine.echo=True
 
@@ -207,11 +207,40 @@ class SyncORM:
                 select(WorkersOrm)
                 .options(selectinload(WorkersOrm.resumes))
             )
+
             res = session.execute(query)
-            result = res.unique().scalars().all()
+            result = res.scalars().all()
             
             worker_1_resumes = result[0].resumes
             print(worker_1_resumes)
 
             worker_2_resumes = result[1].resumes
             print(worker_2_resumes)
+
+    @staticmethod
+    def select_workers_with_condition_relationship():
+        with session_factory() as session:
+            query = (
+                select(WorkersOrm)
+                .options(selectinload(WorkersOrm.resumes_parttime))
+            )
+
+            res = session.execute(query)
+            result = res.scalars().all()
+
+            print(result)
+
+
+    @staticmethod
+    def select_workers_with_condition_relationship_contains_eager():
+       with session_factory() as session:
+            query = (
+                select(WorkersOrm)
+                .join(WorkersOrm.resumes)
+                .options(contains_eager(WorkersOrm.resumes))
+                .filter(ResumesOrm.workload == 'parttime')
+            )
+            res = session.execute(query)
+            result = res.unique().scalars().all()
+
+            print(result)
